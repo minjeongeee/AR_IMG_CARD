@@ -5,100 +5,100 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>이미지 인식 AR</title>
   <style>
-    body { margin: 0; overflow: hidden; font-family: sans-serif; }
-    #ar-container { width: 100vw; height: 100vh; position: relative; background: #000; }
-    #loading {
+    body { margin: 0; overflow: hidden; font-family: sans-serif; background: #f0f0f0; }
+    #ar-container { width: 100vw; height: 100vh; position: relative; }
+    #loading, #startBtn {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       font-size: 1.2rem;
-      color: #fff;
-      background: rgba(0,0,0,0.6);
+      background: rgba(255,255,255,0.9);
       padding: 1rem 2rem;
       border-radius: 12px;
       z-index: 10;
     }
-    #quicklook-btn {
+    #startBtn { cursor: pointer; background: #007aff; color: #fff; border: none; }
+    #arLink {
       position: absolute;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 12px 24px;
-      font-size: 1rem;
       background: #007aff;
-      color: white;
+      color: #fff;
+      padding: 10px 20px;
       border-radius: 8px;
+      text-decoration: none;
       display: none;
-      z-index: 11;
+      z-index: 20;
     }
   </style>
 </head>
 <body>
-  <div id="ar-container">
-    <div id="loading">AR 준비 중...</div>
-    <a id="quicklook-btn" href="#">iOS Quick Look 보기</a>
-  </div>
+<div id="ar-container">
+  <div id="loading" style="display:none;">AR 준비 중...</div>
+  <button id="startBtn">AR 시작하기</button>
+  <a id="arLink" href="#" target="_blank">AR 뷰어로 열기</a>
+</div>
 
-  <script type="module">
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
-    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.0/examples/jsm/loaders/GLTFLoader.js';
-    import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.module.js';
+<!-- Three.js & MindAR (UMD 빌드) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.0/examples/js/loaders/GLTFLoader.js"></script>
 
-    const container = document.getElementById("ar-container");
-    const loadingDiv = document.getElementById("loading");
-    const quicklookBtn = document.getElementById("quicklook-btn");
+<script>
+  const container = document.querySelector("#ar-container");
+  const loadingDiv = document.getElementById("loading");
+  const startBtn = document.getElementById("startBtn");
+  const arLink = document.getElementById("arLink");
 
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-    const isAndroid = /Android/.test(userAgent);
+  let mindarThree, renderer, scene, camera, anchor;
 
-    const mindarThree = new MindARThree({
+  startBtn.addEventListener("click", async () => {
+    startBtn.style.display = "none";
+    loadingDiv.style.display = "block";
+
+    mindarThree = new window.MINDAR.IMAGE.MindARThree({
       container: container,
-      imageTargetSrc: './targets.mind'
+      imageTargetSrc: './targets.mind',
     });
 
-    const { renderer, scene, camera } = mindarThree;
-    const anchor = mindarThree.addAnchor(0);
+    ({ renderer, scene, camera } = mindarThree);
+    anchor = mindarThree.addAnchor(0);
 
-    const loader = new GLTFLoader();
-    let model = null;
-
-    loader.load('./Orbitflower_FINAL_00.glb', (gltf) => {
-      model = gltf.scene;
-      model.scale.set(0.5,0.5,0.5);
-      model.position.y = 0;
-      model.visible = false;
+    const loader = new THREE.GLTFLoader();
+    loader.load("./Orbitflower_FINAL_00.glb", (gltf) => {
+      const model = gltf.scene;
+      model.scale.set(0.2, 0.2, 0.2);
+      model.position.set(0, 0, 0);
       anchor.group.add(model);
     });
 
     anchor.onTargetFound = () => {
-      console.log("이미지 인식됨");
-      loadingDiv.style.display = 'none';
-      if(model) model.visible = true;
+      console.log("이미지 인식됨 → 모델 표시");
+      loadingDiv.style.display = "none";
 
-      if(isIOS) {
-        quicklookBtn.style.display = "block";
-        quicklookBtn.href = "./Orbitflower_FINAL_00.usdz";
-        quicklookBtn.setAttribute("rel","ar");
-      } else if(isAndroid) {
-        const glbFile = location.origin + "/Orbitflower_FINAL_00.glb";
-        window.location.href =
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+      const isAndroid = /Android/.test(userAgent);
+
+      if (isIOS) {
+        arLink.href = "./Orbitflower_FINAL_00.usdz";
+        arLink.style.display = "block";
+      } else if (isAndroid) {
+        const glbFile = location.origin + location.pathname.replace(/\/[^\/]*$/, '/Orbitflower_FINAL_00.glb');
+        arLink.href =
           `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbFile)}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(glbFile)};end;`;
+        arLink.style.display = "block";
       }
     };
 
-    anchor.onTargetLost = () => {
-      if(model) model.visible = false;
-      quicklookBtn.style.display = "none";
-    };
-
-    (async () => {
-      await mindarThree.start();
-      renderer.setAnimationLoop(() => {
-        renderer.render(scene, camera);
-      });
-    })();
-  </script>
+    await mindarThree.start();
+    loadingDiv.style.display = "none";
+    renderer.setAnimationLoop(() => {
+      renderer.render(scene, camera);
+    });
+  });
+</script>
 </body>
 </html>
