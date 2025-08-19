@@ -32,7 +32,7 @@
     if (isIOS) {
       window.location.href = "Orbitflower_FINAL_00.usdz";
     } else if (isAndroid) {
-      const glbFile = location.origin + "/Orbitflower_FINAL.glb";
+      const glbFile = location.origin + "/Orbitflower_FINAL_00.glb";
       window.location.href =
         `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbFile)}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(glbFile)};end;`;
     } else {
@@ -47,3 +47,4 @@
 </script>
 </body>
 </html>
+
