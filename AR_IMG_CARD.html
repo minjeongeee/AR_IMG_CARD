@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AR 이미지 트래킹 실행</title>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar/dist/mindar-image-three.prod.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+  </style>
+</head>
+<body>
+<script type="module">
+  // 1. MindAR 초기화
+  const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+    container: document.body,
+    imageTargetSrc: './targets.mind', 
+  });
+
+  const {renderer, scene, camera} = mindarThree;
+
+  const anchor = mindarThree.addAnchor(0);
+
+  anchor.onTargetFound = () => {
+    console.log("이미지 인식됨 → AR 실행");
+
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isAndroid = /Android/.test(userAgent);
+
+    if (isIOS) {
+      window.location.href = "Orbitflower_FINAL_00.usdz";
+    } else if (isAndroid) {
+      const glbFile = location.origin + "/Orbitflower_FINAL.glb";
+      window.location.href =
+        `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbFile)}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(glbFile)};end;`;
+    } else {
+      alert("AR은 iOS Safari 또는 Android Chrome에서 지원됩니다.");
+    }
+  };
+
+  await mindarThree.start();
+  renderer.setAnimationLoop(() => {
+    renderer.render(scene, camera);
+  });
+</script>
+</body>
+</html>
