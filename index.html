@@ -6,7 +6,7 @@
   <title>이미지 인식 AR</title>
   <style>
     body { margin: 0; overflow: hidden; font-family: sans-serif; }
-    #ar-container { width: 100vw; height: 100vh; position: relative; }
+    #ar-container { width: 100vw; height: 100vh; position: relative; background: #000; }
     #loading {
       position: absolute;
       top: 50%;
@@ -19,60 +19,81 @@
       border-radius: 12px;
       z-index: 10;
     }
+    #start-ar {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 12px;
+      background-color: #4CAF50;
+      color: white;
+      z-index: 11;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-<div id="ar-container">
-  <div id="loading">AR 준비 중...</div>
-</div>
+  <div id="ar-container">
+    <div id="loading">AR 준비 중...</div>
+    <button id="start-ar">AR 시작</button>
+  </div>
 
-<script type="module">
-  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
-  import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.module.js';
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.module.js';
+    import { MindARThree } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.module.js';
 
-  const container = document.querySelector("#ar-container");
-  const loadingDiv = document.getElementById("loading");
+    const container = document.querySelector("#ar-container");
+    const loadingDiv = document.getElementById("loading");
+    const startButton = document.getElementById("start-ar");
 
-  const mindarThree = new MindARThree({
-    container: container,
-    imageTargetSrc: './targets.mind', // MindAR 타겟 파일
-  });
+    startButton.addEventListener("click", async () => {
+      startButton.style.display = "none"; 
+      loadingDiv.style.display = "block";
 
-  const { renderer, scene, camera } = mindarThree;
-  const anchor = mindarThree.addAnchor(0);
+      const mindarThree = new MindARThree({
+        container: container,
+        imageTargetSrc: './targets.mind',
+      });
 
-  const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-  const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-  const cube = new THREE.Mesh(geometry, material);
-  cube.position.y = 0.1;
-  anchor.group.add(cube);
+      const { renderer, scene, camera } = mindarThree;
+      const anchor = mindarThree.addAnchor(0);
 
-  anchor.onTargetFound = () => {
-    console.log("이미지 인식됨 → AR 실행");
-    loadingDiv.style.display = 'none';
+      const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+      const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const cube = new THREE.Mesh(geometry, material);
+      cube.position.y = 0.1;
+      anchor.group.add(cube);
 
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-    const isAndroid = /Android/.test(userAgent);
+      anchor.onTargetFound = () => {
+        console.log("이미지 인식됨 → AR 실행");
+        loadingDiv.style.display = "none";
 
-    if (isIOS) {
-      window.location.href = "Orbitflower_FINAL_00.usdz";
-    } else if (isAndroid) {
-      const glbFile = location.origin + "/Orbitflower_FINAL_00.glb";
-      window.location.href =
-        `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbFile)}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(glbFile)};end;`;
-    } else {
-      alert("AR은 iOS Safari 또는 Android Chrome에서 지원됩니다.");
-    }
-  };
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+        const isAndroid = /Android/.test(userAgent);
 
-  (async () => {
-    await mindarThree.start();
-    loadingDiv.style.display = 'none';
-    renderer.setAnimationLoop(() => {
-      renderer.render(scene, camera);
+        if (isIOS) {
+          window.location.href = "Orbitflower_FINAL_00.usdz";
+        } else if (isAndroid) {
+          // Android Chrome: Scene Viewer
+          const glbFile = location.origin + "/Orbitflower_FINAL_00.glb";
+          window.location.href =
+            `intent://arvr.google.com/scene-viewer/1.0?file=${encodeURIComponent(glbFile)}&mode=ar_preferred#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(glbFile)};end;`;
+        } else {
+          alert("AR은 iOS Safari 또는 Android Chrome에서 지원됩니다.");
+        }
+      };
+
+      await mindarThree.start();
+      loadingDiv.style.display = "none";
+
+      renderer.setAnimationLoop(() => {
+        renderer.render(scene, camera);
+      });
     });
-  })();
-</script>
+  </script>
 </body>
 </html>
